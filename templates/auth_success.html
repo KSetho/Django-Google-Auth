@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Success</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            animation: slideIn 0.6s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            animation: bounce 0.6s ease-out 0.3s both;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% {
+                transform: translate3d(0,0,0);
+            }
+            40%, 43% {
+                transform: translate3d(0,-20px,0);
+            }
+            70% {
+                transform: translate3d(0,-10px,0);
+            }
+            90% {
+                transform: translate3d(0,-4px,0);
+            }
+        }
+        
+        .checkmark {
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+        }
+        
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .message {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .user-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .user-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .user-details {
+            text-align: left;
+            display: inline-block;
+        }
+        
+        .user-details p {
+            margin: 5px 0;
+            color: #555;
+        }
+        
+        .user-details strong {
+            color: #333;
+        }
+        
+        .buttons {
+            margin-top: 30px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            margin: 10px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .api-info {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .api-info h4 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+        
+        .api-endpoints {
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #999;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">
+            <div class="checkmark">✓</div>
+        </div>
+        
+        <h1>Welcome!</h1>
+        <p class="message">You have successfully authenticated with Google!</p>
+        
+        <div class="user-info" id="user-section" style="display: none;">
+            <h3>👤 Your Profile</h3>
+            <div class="user-details" id="user-details">
+                <!-- User details will be populated here -->
+            </div>
+        </div>
+        
+        <div class="api-info">
+            <h4>🚀 API Access</h4>
+            <p>Your authentication was successful! You can now access protected API endpoints:</p>
+            <div class="api-endpoints">
+                <p>• GET /api/auth/profile/ - Your profile information</p>
+                <p>• POST /api/auth/logout/ - Logout</p>
+                <p>• POST /api/auth/refresh/ - Refresh tokens</p>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <a href="/api/auth/profile/" class="btn btn-primary">View API Profile</a>
+            <a href="/admin/" class="btn btn-secondary">Django Admin</a>
+            <button onclick="testAPI()" class="btn btn-secondary">Test API</button>
+        </div>
+        
+        <div class="footer">
+            <p>🔐 Secured with Google OAuth 2.0 & JWT Tokens</p>
+            <p>Django REST Framework Backend</p>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is logged in and get profile
+        async function loadUserProfile() {
+            try {
+                // Try to get user info from session or make API call
+                const response = await fetch('/api/auth/profile/', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayUserInfo(data.user);
+                }
+            } catch (error) {
+                console.log('Could not load user profile:', error);
+            }
+        }
+        
+        function displayUserInfo(user) {
+            const userSection = document.getElementById('user-section');
+            const userDetails = document.getElementById('user-details');
+            
+            userDetails.innerHTML = `
+                <p><strong>Email:</strong> ${user.email}</p>
+                <p><strong>Name:</strong> ${user.first_name} ${user.last_name}</p>
+                <p><strong>User ID:</strong> ${user.id}</p>
+                <p><strong>Joined:</strong> ${new Date(user.date_joined).toLocaleDateString()}</p>
+            `;
+            
+            userSection.style.display = 'block';
+        }
+        
+        async function testAPI() {
+            try {
+                const response = await fetch('/api/auth/test/');
+                const data = await response.json();
+                alert('API Test Successful!\n\n' + JSON.stringify(data, null, 2));
+            } catch (error) {
+                alert('API Test Failed: ' + error.message);
+            }
+        }
+        
+        // Load user profile on page load
+        window.onload = function() {
+            loadUserProfile();
+        };
+    </script>
+</body>
+</html>

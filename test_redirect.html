@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google OAuth Redirect Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        button:hover {
+            background-color: #357ae8;
+        }
+        .google-btn {
+            background-color: #db4437;
+        }
+        .google-btn:hover {
+            background-color: #c23321;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .test-btn {
+            background-color: #28a745;
+        }
+        .test-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Google OAuth Redirect Test</h1>
+            <p>Test the complete Google OAuth flow with redirect</p>
+        </div>
+
+        <div class="section info">
+            <h3>📋 How to Test</h3>
+            <ol>
+                <li><strong>Click "Login with Google (Redirect)"</strong> below</li>
+                <li><strong>You'll be redirected to Google's login page</strong></li>
+                <li><strong>Sign in with your Google account</strong></li>
+                <li><strong>Grant permissions to the app</strong></li>
+                <li><strong>You'll be redirected back</strong> to the callback URL</li>
+                <li><strong>Check the Django server logs</strong> for authentication details</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h3>🚀 OAuth Flow Test</h3>
+            <p>This will redirect you to Google's authentication page:</p>
+            
+            <a href="http://localhost:8000/accounts/google/login/" class="google-btn" style="text-decoration: none; color: white;">
+                🔑 Login with Google (Redirect)
+            </a>
+            
+            <button onclick="testAPI()" class="test-btn">
+                🧪 Test API Connection
+            </button>
+        </div>
+
+        <div class="section">
+            <h3>📊 Backend Status</h3>
+            <div id="api-status">
+                <p>Testing backend connection...</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>📝 What Happens Next</h3>
+            <div class="info">
+                <p><strong>After clicking "Login with Google":</strong></p>
+                <ul>
+                    <li>You'll be redirected to: <code>https://accounts.google.com/oauth/authorize?...</code></li>
+                    <li>Google will ask you to sign in and grant permissions</li>
+                    <li>Google will redirect you back to: <code>http://localhost:8000/accounts/google/login/callback/</code></li>
+                    <li>Django will process the OAuth response and create/login the user</li>
+                    <li>You'll be redirected to: <code>http://localhost:8000/auth/success/</code></li>
+                    <li>Check your Django server terminal for logs</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🔍 Debugging</h3>
+            <div class="info">
+                <p><strong>If you get errors, check:</strong></p>
+                <ul>
+                    <li>Django server is running on <code>http://localhost:8000</code></li>
+                    <li>Google OAuth credentials are correctly set in <code>.env</code></li>
+                    <li>Google Cloud Console has the correct redirect URI: <code>http://localhost:8000/accounts/google/login/callback/</code></li>
+                    <li>Your Google project has the Google+ API enabled</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🖥️ Server Logs</h3>
+            <div class="info">
+                <p>Watch your Django server terminal for authentication logs. You should see:</p>
+                <pre>
+[Date Time] "GET /accounts/google/login/ HTTP/1.1" 302
+[Date Time] "GET /accounts/google/login/callback/?code=... HTTP/1.1" 302
+                </pre>
+            </div>
+        </div>
+
+        <div id="response-section" class="section">
+            <h3>📡 API Responses</h3>
+            <div id="responses"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:8000/api/auth';
+
+        // Test API connection
+        function testAPI() {
+            addResponse('Testing API...', { status: 'connecting' }, 'info');
+            
+            fetch(`${API_BASE_URL}/test/`)
+                .then(response => response.json())
+                .then(data => {
+                    addResponse('✅ API Test Success', data, 'success');
+                    updateAPIStatus('✅ Backend is running and ready!', 'success');
+                })
+                .catch(error => {
+                    addResponse('❌ API Test Failed', { error: error.message }, 'error');
+                    updateAPIStatus('❌ Backend connection failed', 'error');
+                });
+        }
+
+        function updateAPIStatus(message, type) {
+            const statusDiv = document.getElementById('api-status');
+            statusDiv.className = type;
+            statusDiv.innerHTML = `<p>${message}</p>`;
+        }
+
+        function addResponse(title, data, type = 'info') {
+            const responsesDiv = document.getElementById('responses');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const responseDiv = document.createElement('div');
+            responseDiv.className = `section ${type}`;
+            responseDiv.innerHTML = `
+                <h4>${title} (${timestamp})</h4>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            
+            responsesDiv.insertBefore(responseDiv, responsesDiv.firstChild);
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            testAPI();
+            
+            addResponse('🚀 Page Loaded', {
+                message: 'Ready to test Google OAuth flow',
+                google_client_id: '705408089281-61gv1f9bjvsvdsghmv9j8d507dlllh0d.apps.googleusercontent.com',
+                callback_url: 'http://localhost:8000/accounts/google/login/callback/',
+                instructions: 'Click the "Login with Google (Redirect)" button above to start the OAuth flow'
+            }, 'info');
+        };
+    </script>
+</body>
+</html>

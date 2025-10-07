@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Auth Test</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .logout-btn {
+            background-color: #dc3545;
+        }
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Google Authentication Test</h1>
+            <p>Test the Django backend with Google OAuth2</p>
+        </div>
+
+        <div id="login-section" class="section">
+            <h3>Login with Google</h3>
+            <p>Click the button below to sign in with your Google account:</p>
+            <div id="g_id_onload"
+                 data-client_id="705408089281-61gv1f9bjvsvdsghmv9j8d507dlllh0d.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+            
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="outline"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="left">
+            </div>
+        </div>
+
+        <div id="user-section" class="section hidden">
+            <h3>User Information</h3>
+            <div id="user-info"></div>
+            <button onclick="getUserProfile()">Get Profile</button>
+            <button onclick="testAuthenticatedRequest()">Test Protected Endpoint</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div id="api-section" class="section">
+            <h3>API Test</h3>
+            <button onclick="testAPI()">Test API Connection</button>
+            <div id="api-result"></div>
+        </div>
+
+        <div id="response-section" class="section">
+            <h3>API Responses</h3>
+            <div id="responses"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:8000/api/auth';
+        
+        // Store user data
+        let currentUser = null;
+        let accessToken = null;
+        let refreshToken = null;
+
+        // Update Google Client ID from your .env file
+        document.getElementById('g_id_onload').setAttribute('data-client_id', '705408089281-61gv1f9bjvsvdsghmv9j8d507dlllh0d.apps.googleusercontent.com');
+
+        // Handle Google Sign-In Response
+        function handleCredentialResponse(response) {
+            addResponse('Google Sign-In Response', response);
+            
+            const idToken = response.credential;
+            
+            // Send to backend
+            fetch(`${API_BASE_URL}/google/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id_token: idToken
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                addResponse('Backend Authentication Response', data);
+                
+                if (data.tokens) {
+                    // Store tokens
+                    accessToken = data.tokens.access;
+                    refreshToken = data.tokens.refresh;
+                    currentUser = data.user;
+                    
+                    // Update UI
+                    showUserSection();
+                    displayUserInfo(data.user);
+                    
+                    addResponse('Login Successful', {
+                        message: 'User authenticated successfully',
+                        user: data.user,
+                        tokens_received: true
+                    }, 'success');
+                } else {
+                    addResponse('Login Failed', data, 'error');
+                }
+            })
+            .catch(error => {
+                addResponse('Authentication Error', { error: error.message }, 'error');
+            });
+        }
+
+        // Test API connection
+        function testAPI() {
+            fetch(`${API_BASE_URL}/test/`)
+                .then(response => response.json())
+                .then(data => {
+                    addResponse('API Test', data, 'success');
+                })
+                .catch(error => {
+                    addResponse('API Test Error', { error: error.message }, 'error');
+                });
+        }
+
+        // Get user profile
+        function getUserProfile() {
+            if (!accessToken) {
+                addResponse('Profile Error', { error: 'No access token available' }, 'error');
+                return;
+            }
+
+            fetch(`${API_BASE_URL}/profile/`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                addResponse('User Profile', data, 'success');
+            })
+            .catch(error => {
+                addResponse('Profile Error', { error: error.message }, 'error');
+            });
+        }
+
+        // Test authenticated request
+        function testAuthenticatedRequest() {
+            if (!accessToken) {
+                addResponse('Auth Test Error', { error: 'No access token available' }, 'error');
+                return;
+            }
+
+            // This would be a protected endpoint (using profile as example)
+            getUserProfile();
+        }
+
+        // Refresh token
+        function refreshAccessToken() {
+            if (!refreshToken) {
+                addResponse('Refresh Error', { error: 'No refresh token available' }, 'error');
+                return;
+            }
+
+            fetch(`${API_BASE_URL}/refresh/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    refresh: refreshToken
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.access) {
+                    accessToken = data.access;
+                    addResponse('Token Refreshed', { message: 'Access token refreshed successfully' }, 'success');
+                } else {
+                    addResponse('Refresh Error', data, 'error');
+                }
+            })
+            .catch(error => {
+                addResponse('Refresh Error', { error: error.message }, 'error');
+            });
+        }
+
+        // Logout
+        function logout() {
+            if (refreshToken) {
+                fetch(`${API_BASE_URL}/logout/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        refresh_token: refreshToken
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    addResponse('Logout', data, 'success');
+                })
+                .catch(error => {
+                    addResponse('Logout Error', { error: error.message }, 'error');
+                });
+            }
+
+            // Clear local data
+            currentUser = null;
+            accessToken = null;
+            refreshToken = null;
+            
+            // Update UI
+            hideUserSection();
+            addResponse('Local Logout', { message: 'Cleared local session data' }, 'info');
+        }
+
+        // UI helper functions
+        function showUserSection() {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('user-section').classList.remove('hidden');
+        }
+
+        function hideUserSection() {
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('user-section').classList.add('hidden');
+        }
+
+        function displayUserInfo(user) {
+            const userInfoDiv = document.getElementById('user-info');
+            userInfoDiv.innerHTML = `
+                <div class="success">
+                    <h4>Welcome, ${user.first_name} ${user.last_name}!</h4>
+                    <p><strong>Email:</strong> ${user.email}</p>
+                    <p><strong>User ID:</strong> ${user.id}</p>
+                    <p><strong>New User:</strong> ${user.is_new_user ? 'Yes' : 'No'}</p>
+                </div>
+            `;
+        }
+
+        function addResponse(title, data, type = 'info') {
+            const responsesDiv = document.getElementById('responses');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const responseDiv = document.createElement('div');
+            responseDiv.className = `section ${type}`;
+            responseDiv.innerHTML = `
+                <h4>${title} (${timestamp})</h4>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            
+            responsesDiv.insertBefore(responseDiv, responsesDiv.firstChild);
+        }
+
+        // Initialize API test on page load
+        window.onload = function() {
+            testAPI();
+            
+            // Add instructions
+            addResponse('Instructions', {
+                message: 'To test Google authentication:',
+                steps: [
+                    '1. Update GOOGLE_CLIENT_ID in your .env file',
+                    '2. Update the client_id in this HTML file (line with data-client_id)',
+                    '3. Make sure your Django server is running on localhost:8000',
+                    '4. Click the Google Sign-In button above'
+                ]
+            }, 'info');
+        };
+    </script>
+</body>
+</html>
